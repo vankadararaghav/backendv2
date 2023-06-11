@@ -52,7 +52,7 @@ app.post("/login",(req,res)=>{
         var data_found = await User.find(new_user);
         console.log(data_found);
         
-        if(data_found)
+        if(data_found.length!=0)
         {  
             console.log("data found" + data_found[0].email);
             var  data  = await Task.find({user_id: data_found[0]._id});
@@ -61,7 +61,7 @@ app.post("/login",(req,res)=>{
                         "message":"Successfully Login",
                         "id":data_found[0]._id
                         })
-                    }
+        }
         else{
           return res.send({
            "status": false,
