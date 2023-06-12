@@ -6,11 +6,10 @@ const taskSchema = mongoose.Schema(
                    type: mongoose.Schema.Types.ObjectId,
                    ref: user,
                  },
-        task :  String
-
+        task :  String,
+        isDone: Boolean,
     }
 )
 
-const task = new mongoose.model("task",taskSchema);
-
-export default task;
+const taskNewVersion = new mongoose.model("task",taskSchema);
+export default taskNewVersion;

@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import User from "./models/user.js";
 import cookieParser from "cookie-parser";
 import MongoDBStore from 'connect-mongodb-session';
-import Task from "./models/Task.js";
+import Task from "./models/TaskNewVersion.js";
 import cors from 'cors';
 
 const app = express();
@@ -115,19 +115,27 @@ app.post("/addtask",(req,res)=>{
        "message": "Please Login"
     });
   }
+
     async function addTask(){
            var id = req.headers.id;
            var user = await User.findOne({_id:id});
            var task = {
                 "user_id": user._id,
-                "task":  req.body.task
+                "task":  req.body.task,
+                "isDone": false,
            }
            var addedTask  =   await Task(task).save();
-           res.send({
-             "status": true,
-             "data" : addedTask,
-             "message": "stored successfully"
-           })
+           var result = await Task.find({});
+           var nPages = Math.ceil(result.length/5);
+          //  console.log(`/pages/:${req.body.currentPage}/:${id}`);
+           res.redirect(`/pages/${req.body.currentPage}/${id}`);
+
+          //  res.send({
+          //    "status": true,
+          //    "data" : addedTask,
+          //    "nPages": nPages,
+          //    "message": "stored successfully"
+          //  })
          }
     addTask();
 })
@@ -144,7 +152,7 @@ console.log(req.headers.id);
        "message": "Please Login"
     });
   }
-  console.log("world")
+  console.log("world");
   console.log(req.body);
   async function editData(){
        console.log(req.body);
@@ -212,9 +220,11 @@ app.delete("/removeall",(req,res)=>{
         
        let user = await User.findOne({_id:req.headers.id}); 
        let result = await Task.deleteMany({user_id:user._id})
+       let total = await Task.find({});
        console.log(result);
        return res.json({
         "status":true,
+        "nPages": Math.ceil(total/5),
         "message": "Successfully deleted All",
        })
   }
@@ -239,17 +249,81 @@ app.get("/getalltasks",(req,res)=>{
       let user = await User.findOne({_id:req.headers.id});
        
       let result = await Task.find({user_id:user._id});
-      console.log(result);
-
-      res.json({
-         "status":true,
-         "data": result,
-      })
+      if(result.length>=5)
+      {
+        return res.json({
+          "status":true,
+          "data": result.slice(0,5),
+          "nPages": Math.ceil(result.length/5),
+        })
+      }
+      else{
+        return res.json({
+          "status": true,
+          "data": result,
+          "nPages": 1
+        })
+      }
+      
     }
     getAllData();
 })
 
-app.listen(port,"0.0.0.0",()=>{
-    console.log(`[server] Server started @${port}`)
+app.put("/checkbox",(req,res)=>{
+  console.log("checkbox put");
+  
+  var update_checkbox = async ()=>{
+    try{
+      console.log("inside");
+      let _id = req.body.task_id;
+      console.log({_id,isDone:req.body.checked});
+      let result = await Task.findOneAndUpdate({_id},{isDone:req.body.checked});
+      return res.json({
+        "status": true,
+        "message":"successfully updated"
+      })
+    }
+    catch(err){
+      console.log(err);
+      return res.json({
+        "status":false,
+        "message":"something wrong happend"
+      })
+    }
+  }
+  update_checkbox();
 })
 
+app.get("/pages/:pageNumber/:id",(req,res)=>{
+    console.log(req.params);
+    var getPages = async () =>{
+    try{
+       var number = req.params.pageNumber;
+       var id = req.params.id;
+       var recordsPerPage = 5;
+       var result = await Task.find({user_id:id});
+       var firstIndex = recordsPerPage*(number-1);
+       var lastIndex  = firstIndex+recordsPerPage;
+       var nPages = Math.ceil(result.length/5);
+       var data = result.slice(firstIndex,lastIndex);
+       return res.json({
+           "nPages":nPages,
+           "status":true,
+           "data": data,
+       });
+     }
+     catch(err)
+     {
+        console.log(err);
+        return res.json({
+          "status": false,
+          "message": "something wrong happend",
+        })
+     }
+    }
+
+    getPages();
+});
+app.listen(port,"0.0.0.0",()=>{
+    console.log(`[server] Server started @${port}`)
+});
