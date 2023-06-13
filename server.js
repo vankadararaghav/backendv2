@@ -174,7 +174,7 @@ console.log(req.headers.id);
   editData();
 });
 
-app.delete("/removetask/:id",(req,res)=>{
+app.delete("/removetask/:id/:currentPage",(req,res)=>{
   console.log(req.headers.id);
 
   if(!req.headers.id)
@@ -192,6 +192,8 @@ app.delete("/removetask/:id",(req,res)=>{
        console.log("ID:",req.query,req.params);
        console.log({user_id:user._id,_id:req.params.id});
       const result  = await Task.deleteOne({_id:req.params.id});
+     
+      // res.redirect(`/pages/${req.params.currentPage}/${req.params.id}`);
       const totalRecords = await Task.find({user_id:id});
       console.log(Math.ceil(totalRecords.length/5));
       const nPages = Math.ceil(totalRecords.length/5);
@@ -231,7 +233,7 @@ app.delete("/removeall",(req,res)=>{
 
   }
   removeAll();
-  
+
 })
 
 app.get("/getalltasks",(req,res)=>{
@@ -299,16 +301,32 @@ app.put("/checkbox",(req,res)=>{
 
 app.get("/pages/:pageNumber/:id",(req,res)=>{
     console.log(req.params);
+    console.log(req.headers.id);
+
+      if(!req.headers.id)
+      {
+        return  res.json({
+          "status" : false,
+          "message": "Please Login"
+        });
+      }
+      
     var getPages = async () =>{
     try{
        var number = req.params.pageNumber;
        var id = req.params.id;
        var recordsPerPage = 5;
-       var result = await Task.find({user_id:id});
+       console.log(req.headers.id)
+       var result = await Task.find({user_id:req.headers.id});
        var firstIndex = recordsPerPage*(number-1);
        var lastIndex  = firstIndex+recordsPerPage;
        var nPages = Math.ceil(result.length/5);
        var data = result.slice(firstIndex,lastIndex);
+       console.log({
+        "nPages":nPages,
+        "status":true,
+        "data": data,
+    });
        return res.json({
            "nPages":nPages,
            "status":true,
