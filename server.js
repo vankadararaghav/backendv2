@@ -191,12 +191,13 @@ app.delete("/removetask/:id",(req,res)=>{
        let user = await User.findOne({_id:id});
        console.log("ID:",req.query,req.params);
        console.log({user_id:user._id,_id:req.params.id});
-       var allTasks = await Task.find({});
-       console.log("All TaSks")
-       console.log(allTasks);
       const result  = await Task.deleteOne({_id:req.params.id});
+      const totalRecords = await Task.find({user_id:id});
+      console.log(Math.ceil(totalRecords.length/5));
+      const nPages = Math.ceil(totalRecords.length/5);
        return res.json({
         "status": true,
+        "nPages": nPages,
         "message": "successfully deleted",
        });
     }
@@ -227,8 +228,10 @@ app.delete("/removeall",(req,res)=>{
         "nPages": Math.ceil(total/5),
         "message": "Successfully deleted All",
        })
+
   }
   removeAll();
+  
 })
 
 app.get("/getalltasks",(req,res)=>{
